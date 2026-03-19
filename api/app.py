@@ -6,7 +6,7 @@ from pydantic import BaseModel
 app = FastAPI()
 
 class PatientInput(BaseModel):
-    numeric: List[float]
+    numeric: List[int]
     categorical: List[str]
     textual: List[str]
     sequential: List[str]

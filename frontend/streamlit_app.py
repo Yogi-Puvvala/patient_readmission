@@ -2,45 +2,75 @@ import streamlit as st
 import requests
 import os
 
-st.title("Patient Readmission System")
-data = {"numeric": [],
-        "categorical": [],
-        "textual": [],
-        "sequential": []}
+st.title("Patient Readmission Prediction")
 
-with st.form(key = "patient_data"):
-    data["numeric"].append(st.number_input(label = "Days in hospital", min_value = 1, max_value = 14))
-    data["numeric"].append(st.number_input(label = "Number of lab procedures"))
-    data["numeric"].append(st.number_input(label = "Number of medications"))
-    data["numeric"].append(st.number_input(label = "Number of diagnoses"))
+data = {
+    "numeric"    : [],
+    "categorical": [],
+    "textual"    : [],
+    "sequential" : []
+}
 
-    data["categorical"].append(st.selectbox(label = "Gender", options = ["Male", "Female"]))
-    data["categorical"].append(st.selectbox(label = "Race", options = ["Caucasian", "AfricanAmerican", "Hispanic", "Other", "Asian"]))
-    data["categorical"].append(str(st.slider(label = "Admission type ID", min_value = 1, max_value = 8)))
-    data["categorical"].append(str(st.slider(label = "Discharge disposition ID", min_value = 1, max_value = 28)))
+with st.form(key="patient_data"):
 
-    data["textual"].append(st.selectbox(label = "Diag 1", options = ['Circulatory', 'Diabetes', 'Respiratory', 'Digestive', 'Injury', 'Musculoskeletal', 'Neoplasms', 'Genitourinary', 'Other']))
-    data["textual"].append(st.selectbox(label = "Diag 2", options = ['Circulatory', 'Diabetes', 'Respiratory', 'Digestive', 'Injury', 'Musculoskeletal', 'Neoplasms', 'Genitourinary', 'Other']))
-    data["textual"].append(st.selectbox(label = "Diag 3", options = ['Circulatory', 'Diabetes', 'Respiratory', 'Digestive', 'Injury', 'Musculoskeletal', 'Neoplasms', 'Genitourinary', 'Other']))
+    st.subheader("Hospital Stay")
+    data["numeric"].append(st.number_input("Days in Hospital",        min_value=1,  max_value=14))
+    data["numeric"].append(st.number_input("Number of Lab Procedures",min_value=1,  max_value=132))
+    data["numeric"].append(st.number_input("Number of Medications",   min_value=1,  max_value=81))
+    data["numeric"].append(st.number_input("Number of Diagnoses",     min_value=1,  max_value=16))
 
-    data["sequential"].append(st.selectbox(label = "metformin", options = ["No", "Steady", "Up", "Down"]))
-    data["sequential"].append(st.selectbox(label = "insulin", options = ["No", "Steady", "Up", "Down"]))    
-    data["sequential"].append(st.selectbox(label = "glipizide", options = ["No", "Steady", "Up", "Down"]))
-    data["sequential"].append(st.selectbox(label = "glyburide", options = ["No", "Steady", "Up", "Down"]))
-    data["sequential"].append(st.selectbox(label = "pioglitazone", options = ["No", "Steady", "Up", "Down"]))
+    st.subheader("Patient Info")
+    data["categorical"].append(st.selectbox("Gender", ["Male", "Female"]))
+    data["categorical"].append(st.selectbox("Race",   ["Caucasian", "AfricanAmerican", "Hispanic", "Asian", "Other"]))
+    data["categorical"].append(st.selectbox("Admission Type",   ["Emergency", "Urgent", "Elective", "Not Available"]))
+    data["categorical"].append(st.selectbox("Discharged To",    ["Home", "Transferred", "Nursing Facility", "Other"]))
 
-    submit = st.form_submit_button(label = "Get Prediction")
+    st.subheader("Diagnosis")
+    diag_options = ['Circulatory','Diabetes','Respiratory','Digestive',
+                    'Injury','Musculoskeletal','Neoplasms','Genitourinary','Other']
+    data["textual"].append(st.selectbox("Primary Diagnosis",   diag_options))
+    data["textual"].append(st.selectbox("Secondary Diagnosis", diag_options))
+    data["textual"].append(st.selectbox("Third Diagnosis",     diag_options))
+
+    st.subheader("Medications During Stay")
+    med_options = ["No", "Steady", "Up", "Down"]
+    data["sequential"].append(st.selectbox("Metformin",    med_options))
+    data["sequential"].append(st.selectbox("Insulin",      med_options))
+    data["sequential"].append(st.selectbox("Glipizide",    med_options))
+    data["sequential"].append(st.selectbox("Glyburide",    med_options))
+    data["sequential"].append(st.selectbox("Pioglitazone", med_options))
+
+    submit = st.form_submit_button("Get Prediction")
 
 if submit:
-    if submit:
-        text = data["textual"]
-        data["textual"] = [" ".join(text)]
+    # Combining textual into single string
+    data["textual"] = [" ".join(data["textual"])]
 
-        try:
-            url = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
-            response = requests.post(url, json=data)
-            st.write(response.status_code)
-            st.write(response.text)
-            st.success(response.json())
-        except Exception as e:
-            st.error(f"API Error: {e}")
+    try:
+        # API_URL  = os.getenv("API_URL", "http://127.0.0.1:8000")
+        API_URL = os.getenv("API_URL", "http://localhost:8000")
+        response = requests.post(f"{API_URL}/predict", json=data)
+
+        if response.status_code == 200:
+            result = response.json()
+            prediction = result["Prediction"]
+
+            # Displaying result 
+            if prediction == "NO":
+                st.success("Low Risk — Patient likely will NOT be readmitted")
+            elif prediction == "<30":
+                st.warning("High Risk — Patient may be readmitted within 30 days")
+            else:
+                st.info("Moderate Risk — Patient may be readmitted after 30 days")
+
+            # Confidence scores 
+            st.subheader("Confidence Scores")
+            scores = result["Confidence_Scores"]
+            for label, score in scores.items():
+                st.progress(int(score), text=f"{label}: {score}%")
+
+        else:
+            st.error(f"API Error {response.status_code}: {response.text}")
+
+    except Exception as e:
+        st.error(f"Connection Error: {e}")

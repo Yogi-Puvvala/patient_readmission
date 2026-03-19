@@ -1,0 +1,44 @@
+# .dockerignore
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+my_env/
+venv/
+.venv/
+
+# Data files — never needed in Docker
+data/
+
+# DVC
+.dvc/
+*.dvc
+
+# MLflow
+mlruns/
+mlartifacts/
+mlflow.db
+
+# Jupyter
+notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Docs
+README.md
