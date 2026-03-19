@@ -14,7 +14,7 @@ BASE_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 scaler    = pickle.load(open(os.path.join(BASE_DIR, "models/scaler.pkl"),    "rb"))
 encoder   = pickle.load(open(os.path.join(BASE_DIR, "models/encoder.pkl"),   "rb"))
 tokenizer = pickle.load(open(os.path.join(BASE_DIR, "models/tokenizer.pkl"), "rb"))
-model = load_model(os.path.join(BASE_DIR, "models/model.keras"))
+model = load_model(os.path.join(BASE_DIR, "models/model.h5"))
 print("Model and artifacts loaded!")
 
 MED_MAP = {'No': 0, 'Steady': 1, 'Up': 2, 'Down': -1}
